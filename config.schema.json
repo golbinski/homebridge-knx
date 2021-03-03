@@ -1,0 +1,125 @@
+{
+  "pluginAlias": "KNX",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "required": true,
+        "default": "KNX"
+      },
+      "debugging": {
+        "type": "object",
+        "properties": {
+          "logBusTraffic": {
+            "title": "Enable BusMonitor debug logging",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "gateway": {
+        "type": "object",
+        "properties": {
+          "ipAddress": {
+            "title": "knxd ip address",
+            "type": "string",
+            "required": true,
+            "format": "hostname",
+            "default": "localhost"
+          },
+          "port": {
+            "title": "knxd port",
+            "type": "number",
+            "required": true,
+            "default": 6720
+          }
+        }
+      },
+      "switches": {
+        "type": "array",
+        "title": "Switches",
+        "items": {
+          "title": "Switch",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "groupAddress": {
+              "title": "Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of device"
+            }
+          }
+        }
+      },
+      "windowCoverings": {
+        "type": "array",
+        "title": "Window Coverings",
+        "items": {
+          "title": "Window Covering",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "targetGroupAddress": {
+              "title": "Target Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of window covering target position"
+            },
+            "statusGroupAddress": {
+              "title": "Status Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of window covering current position"
+            },
+            "holdGroupAddress": {
+              "title": "Hold Group Address",
+              "type": "string",
+              "required": false,
+              "description": "KNX Group Address of window covering hold position"
+            }
+          }
+        }
+      },
+      "carbonDioxideSensors": {
+        "type": "array",
+        "title": "Carbon Dioxide Sensors",
+        "items": {
+          "title": "Carbon Dioxide Sensor",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "groupAddress": {
+              "title": "Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of device"
+            },
+            "warningThreshold": {
+              "title": "Anormal Carbon Dioxide Level Threshold",
+              "type": "number",
+              "required": false,
+              "default": 800
+            }
+          }
+        }
+      }
+    }
+  }
+}
