@@ -14,6 +14,9 @@ export interface KNXWindowCoveringConfig {
   targetGroupAddress: string,
   statusGroupAddress: string,
   holdGroupAddress: string,
+  reverse: boolean,
+  minValue: number,
+  maxValue: number,
 }
 
 export class KNXWindowCovering extends KNXAccessoryPlugin {
@@ -40,9 +43,17 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
         .on('set', this.setHoldPosition.bind(this));
     }
     this.on('update', (address, value) => {
-      this.updateCurrentPosition(value);
-      this.logState('CURRENT_POSITION_UPDATE');
+      if (address === this.config.statusGroupAddress) {
+        this.updateCurrentPosition(this.fromDevice(value));
+        this.logState('CURRENT_POSITION_UPDATE');
+      } else if (address === this.config.targetGroupAddress) {
+        if (value !== this.targetPosition) {
+          this.updateTargetPosition(this.fromDevice(value));
+          this.logState('TARGET_POSITION_UPDATE');
+        }
+      }
     });
+    this.subscribe(this.config.targetGroupAddress);
     this.subscribe(this.config.statusGroupAddress);
   }
 
@@ -83,6 +94,42 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
     this.service.updateCharacteristic(this.platform.Characteristic.PositionState, this.positionState);
   }
 
+  fromHAP(value: number) {
+    // Apple HomeKit is sending the position of opened covering,
+    // while blinds usually works in opposite mode where they
+    // presenting the percentage value of closed window covering
+    if (this.config.reverse) {
+      return value;
+    } else {
+      return 100 - value;
+    }
+  }
+
+  toHAP(value: number) {
+    if (this.config.reverse) {
+      return value;
+    } else {
+      return 100 - value;
+    }
+  }
+
+  fromDevice(value: number) {
+    // map device value to range [0, 100]
+    if (value > this.config.maxValue) {
+      value = this.config.maxValue;
+    } else if (value < this.config.minValue) {
+      value = this.config.minValue;
+    }
+    const range = this.config.maxValue - this.config.minValue;
+    return Math.round(value / range * 100);
+  }
+
+  toDevice(value: number) {
+    // map accessory value to device range
+    const range = this.config.maxValue - this.config.minValue;
+    return Math.round(value / 100 * range);
+  }
+
   updateTargetPosition(value: number) {
     this.targetPosition = value;
     this.refreshPositionState();
@@ -94,13 +141,13 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
       // position change triggered externaly
       this.targetPosition = value;
     }
-    this.service.updateCharacteristic(this.platform.Characteristic.CurrentPosition, 100 - this.currentPosition);
+    this.service.updateCharacteristic(this.platform.Characteristic.CurrentPosition, this.toHAP(this.currentPosition));
     this.refreshPositionState();
   }
 
   changeTargetPosition(previous: number, target: number, callback) {
     this.updateTargetPosition(target);
-    this.write(target, (err) => {
+    this.write(this.toDevice(target), (err) => {
       if (err) {
         this.updateTargetPosition(previous);
         callback(err); 
@@ -113,7 +160,7 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
   
 
   setTargetPosition(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    const target : number = 100 - (value as number);
+    const target = this.fromHAP(value as number);
     if (target === this.targetPosition) {
       callback(null);
       return;
@@ -124,8 +171,8 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
       if (this.config.holdGroupAddress.length > 0) {
         this.write(1, (err) => {
           this.platform.read(this.config.statusGroupAddress, (err, value) => {
-            this.currentPosition = value;
-            this.changeTargetPosition(value, target, callback);
+            this.currentPosition = this.fromDevice(value);
+            this.changeTargetPosition(this.currentPosition, target, callback);
           });
         }, this.config.holdGroupAddress, 'DPT1.001');
       } else {
@@ -144,11 +191,11 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
   }
 
   getCurrentPosition(callback: CharacteristicGetCallback) {
-    callback(null, 100 - this.currentPosition);
+    callback(null, this.toHAP(this.currentPosition));
   }
 
   getTargetPosition(callback: CharacteristicGetCallback) {
-    callback(null, 100 - this.targetPosition);
+    callback(null, this.toHAP(this.targetPosition));
   }
 
   getPositionState(callback: CharacteristicGetCallback) {

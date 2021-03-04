@@ -89,6 +89,24 @@
               "type": "string",
               "required": false,
               "description": "KNX Group Address of window covering hold position"
+            },
+            "reverse": {
+              "title": "Reverse Direction",
+              "type": "boolean",
+              "required": false,
+              "default": false
+            },
+            "minValue": {
+              "title": "Minimum window covering value (i.e. fully open)",
+              "type": "number",
+              "required": false,
+              "default": 0
+            },
+            "maxValue": {
+              "title": "Maximum window covering value (i.e. fully closed)",
+              "type": "number",
+              "required": false,
+              "default": 100
             }
           }
         }
@@ -116,6 +134,84 @@
               "type": "number",
               "required": false,
               "default": 800
+            }
+          }
+        }
+      },
+      "temperatureSensors": {
+        "type": "array",
+        "title": "Temperature Sensors",
+        "items": {
+          "title": "Temperature Sensor",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "groupAddress": {
+              "title": "Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of sensor current temperature"
+            },
+            "minTemperature": {
+              "title": "Minimum temperature",
+              "type": "number",
+              "required": false,
+              "default": 10
+            },
+            "maxTemperature": {
+              "title": "Maximum temperature",
+              "type": "number",
+              "required": false,
+              "default": 38
+            }
+          }
+        }
+      },
+      "thermostats": {
+        "type": "array",
+        "title": "Thermostats",
+        "items": {
+          "title": "Thermostat",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "targetGroupAddress": {
+              "title": "Target Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of thermostat target temperature setpoint"
+            },
+            "statusGroupAddress": {
+              "title": "Status Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of thermostat current temperature"
+            },
+            "valveGroupAddress": {
+              "title": "Valve Group Address",
+              "type": "string",
+              "required": false,
+              "description": "KNX Group Address of valve which is controlled by thermostat"
+            },
+            "minTemperature": {
+              "title": "Minimum thermostat temperature",
+              "type": "number",
+              "required": false,
+              "default": 10
+            },
+            "maxTemperature": {
+              "title": "Maximum thermostat temperature",
+              "type": "number",
+              "required": false,
+              "default": 38
             }
           }
         }

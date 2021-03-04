@@ -6,6 +6,8 @@ import { KNXAccessoryPlugin } from './accessory';
 import { KNXSwitchConfig, KNXSwitch } from './switch';
 import { KNXWindowCoveringConfig, KNXWindowCovering } from './windowcovering';
 import { KNXCarbonDioxideSensorConfig, KNXCarbonDioxideSensor } from './carbondioxidesensor';
+import { KNXTemperatureSensorConfig, KNXTemperatureSensor } from './temperaturesensor';
+import { KNXThermostatConfig, KNXThermostat } from './thermostat';
 
 export interface KNXGatewayConfig {
   ipAddress: string,
@@ -21,12 +23,22 @@ export interface KNXOptions {
   switches: KNXSwitchConfig[],
   windowCoverings: KNXWindowCoveringConfig[],
   carbonDioxideSensors: KNXCarbonDioxideSensorConfig[],
+  temperatureSensors: KNXTemperatureSensorConfig[],
+  thermostats: KNXThermostatConfig[],
   debug: KNXDebuggingConfig,
 }
 
 interface Subscriber {
   address: string,
   accessory: KNXAccessoryPlugin,
+}
+
+interface PendingRequest {
+  request: 'read' | 'write',
+  groupAddress: string,
+  callback,
+  dpt?: string,
+  value?: string,
 }
 
 export class KNXPlatform implements StaticPlatformPlugin {
@@ -37,7 +49,8 @@ export class KNXPlatform implements StaticPlatformPlugin {
   private connection: typeof Connection | null = null;
   private busmonitor: typeof Parser | null = null;
   private devices: KNXAccessoryPlugin[] = [];
-  private subscribers: Subscriber[] = []; 
+  private subscribers: Subscriber[] = [];
+  private pendingRequests: PendingRequest[] = []; 
 
   constructor(
     public readonly log: Logger,
@@ -49,6 +62,8 @@ export class KNXPlatform implements StaticPlatformPlugin {
       switches: config.switches as KNXSwitchConfig[],
       windowCoverings: config.windowCoverings as KNXWindowCoveringConfig[],
       carbonDioxideSensors: config.carbonDioxideSensors as KNXCarbonDioxideSensorConfig[],
+      temperatureSensors: config.temperatureSensors as KNXTemperatureSensorConfig[],
+      thermostats: config.thermostats as KNXThermostatConfig[],
       debug: config.debugging as KNXDebuggingConfig,
     };
     this.connect(); 
@@ -97,6 +112,8 @@ export class KNXPlatform implements StaticPlatformPlugin {
     this.buildDevicesFromConfig(this.config.switches, KNXSwitch);
     this.buildDevicesFromConfig(this.config.windowCoverings, KNXWindowCovering);
     this.buildDevicesFromConfig(this.config.carbonDioxideSensors, KNXCarbonDioxideSensor);
+    this.buildDevicesFromConfig(this.config.temperatureSensors, KNXTemperatureSensor);
+    this.buildDevicesFromConfig(this.config.thermostats, KNXThermostat);
     callback(this.devices);
   }
 
@@ -133,25 +150,21 @@ export class KNXPlatform implements StaticPlatformPlugin {
     });
   }
 
-  private send(request: 'read' | 'write', groupAddress: string, callback, dpt?: string, value?: string) {
+  private send(groupAddress: string, msg, callback) {
     this.open((err, connection) => {
       if (err) {
-        this.log.error(err.message);
-        callback(err); 
+        callback(new Error(err.message + ' (while opening connection)')); 
         return;
       }
       const addr = str2addr(groupAddress);
       connection.openTGroup(addr, 0, (err) => {
         if (err) {
-          this.log.error(err.message);
-          callback(err);
+          callback(new Error(err.message + ' (while opening T_Group)')); 
           return;
         }
-        const msg = request === 'read' ? createMessage('read') : createMessage('write', dpt, value);
         connection.sendAPDU(msg, (err) => {
           if (err) {
-            this.log.error(err.message);
-            callback(err);
+            callback(new Error(err.message + ' (while sending APDU)')); 
           } else {
             callback(null);
           }
@@ -159,26 +172,66 @@ export class KNXPlatform implements StaticPlatformPlugin {
       });
     });
   }
+
+  private execute(request: PendingRequest) {
+    if (request.request === 'read') {
+      this.log.debug('Sending', '<' + request.request + '>', 'to', request.groupAddress);
+    } else {
+      this.log.debug('Sending', '<' + request.request + '>', 'to', request.groupAddress, ':=', request.value, '[' + request.dpt + ']');
+    }
+    const msg = request.request === 'read' ? createMessage('read') : createMessage('write', request.dpt, request.value);
+    this.send(request.groupAddress, msg, (err) => {
+      if (err) {
+        this.log.error('Cannot send', '<' + request.request + '>', 'to', request.groupAddress + ':', err.message);
+      } else if (request.request === 'read') {
+        this.log.debug('Sent', '<' + request.request + '>', 'to', request.groupAddress);
+      } else {
+        this.log.debug('Sent', '<' + request.request + '>', 'to', request.groupAddress, ':=', request.value, '[' + request.dpt + ']');
+      }
+      request.callback(err);
+      if (request !== this.pendingRequests.shift()) {
+        this.log.warn('Corrupted pending requests queue detected');
+      }
+      if (this.pendingRequests.length > 0) {
+        this.execute(this.pendingRequests[0]);
+      }
+    });
+  }
+
+  private schedule(request: PendingRequest) {
+    this.pendingRequests.push(request);
+    if (this.pendingRequests.length === 1) {
+      this.execute(this.pendingRequests[0]);
+    }
+  }
  
   read(groupAddress: string, callback) {
-    this.log.debug('Reading from', groupAddress);
     const handler = (src, dest, dpt, val) => {
       if (dest === groupAddress) {
         this.busmonitor!.off('response', handler);
         callback(null, val);
       }
     };
-    this.send('read', groupAddress, (err) => {
-      if (err) {
-        callback(err);
-        return;
+    this.schedule({
+      request: 'read',
+      groupAddress: groupAddress,
+      callback: (err) => {
+        if (err) {
+          callback(err);
+          return;
+        }
+        this.busmonitor!.on('response', handler);
       }
-      this.busmonitor!.on('response', handler);
     });
   }
  
   write(groupAddress: string, dpt: string, value, callback) {
-    this.log.debug('Writing to', groupAddress, ':=', value, '[' + dpt + ']');
-    this.send('write', groupAddress, callback, dpt, value);
+    this.schedule({
+      request: 'write',
+      groupAddress: groupAddress,
+      callback: callback,
+      dpt: dpt,
+      value: value
+    });
   }
 }
