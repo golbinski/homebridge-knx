@@ -111,6 +111,64 @@
           }
         }
       },
+      "fans": {
+        "type": "array",
+        "title": "Fans",
+        "items": {
+          "title": "Fan",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "groupAddress": {
+              "title": "Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of device"
+            }
+          }
+        }
+      },
+      "airQualitySensors": {
+        "type": "array",
+        "title": "Air Quality Sensors",
+        "items": {
+          "title": "Air Quality Sensor",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "vocDensityGroupAddress": {
+              "title": "VOC Density Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of VOC density sensor"
+            },
+            "vocDensityUnit": {
+              "title": "VOC Density measurement unit",
+              "type": "string",
+              "required": false,
+              "default": "ppb",
+              "oneOf": [
+                { "title": "ppb", "enum": ["ppb"] },
+                { "title": "ppm", "enum": ["ppm"] }
+              ]
+            },
+            "vocAverageMolecularWeight": {
+              "title": "VOC average molecular weight",
+              "type": "number",
+              "required": false,
+              "default": 78.9516 
+            }
+          }
+        }
+      },
       "carbonDioxideSensors": {
         "type": "array",
         "title": "Carbon Dioxide Sensors",
@@ -134,6 +192,48 @@
               "type": "number",
               "required": false,
               "default": 800
+            }
+          }
+        }
+      },
+      "lightSensors": {
+        "type": "array",
+        "title": "Light Sensors",
+        "items": {
+          "title": "Light Sensor",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "groupAddress": {
+              "title": "Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of device"
+            }
+          }
+        }
+      },
+      "humiditySensors": {
+        "type": "array",
+        "title": "Humidity Sensors",
+        "items": {
+          "title": "Humidity Sensor",
+          "type": "object",
+          "properties": {
+            "displayName": {
+              "title": "Display Name",
+              "type": "string",
+              "required": true
+            },
+            "groupAddress": {
+              "title": "Group Address",
+              "type": "string",
+              "required": true,
+              "description": "KNX Group Address of device"
             }
           }
         }

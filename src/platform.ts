@@ -5,7 +5,11 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { KNXAccessoryPlugin } from './accessory';
 import { KNXSwitchConfig, KNXSwitch } from './switch';
 import { KNXWindowCoveringConfig, KNXWindowCovering } from './windowcovering';
+import { KNXFanConfig, KNXFan } from './fan';
+import { KNXAirQualitySensorConfig, KNXAirQualitySensor } from './airqualitysensor';
 import { KNXCarbonDioxideSensorConfig, KNXCarbonDioxideSensor } from './carbondioxidesensor';
+import { KNXLightSensorConfig, KNXLightSensor } from './lightsensor';
+import { KNXHumiditySensorConfig, KNXHumiditySensor } from './humiditysensor';
 import { KNXTemperatureSensorConfig, KNXTemperatureSensor } from './temperaturesensor';
 import { KNXThermostatConfig, KNXThermostat } from './thermostat';
 
@@ -22,7 +26,11 @@ export interface KNXOptions {
   gateway: KNXGatewayConfig,
   switches: KNXSwitchConfig[],
   windowCoverings: KNXWindowCoveringConfig[],
+  fans: KNXFanConfig[],
+  airQualitySensors: KNXAirQualitySensorConfig[],
   carbonDioxideSensors: KNXCarbonDioxideSensorConfig[],
+  lightSensors: KNXLightSensorConfig[],
+  humiditySensors: KNXHumiditySensorConfig[],
   temperatureSensors: KNXTemperatureSensorConfig[],
   thermostats: KNXThermostatConfig[],
   debug: KNXDebuggingConfig,
@@ -59,11 +67,15 @@ export class KNXPlatform implements StaticPlatformPlugin {
   ) {
     this.config = {
       gateway: config.gateway as KNXGatewayConfig,
-      switches: config.switches as KNXSwitchConfig[],
-      windowCoverings: config.windowCoverings as KNXWindowCoveringConfig[],
-      carbonDioxideSensors: config.carbonDioxideSensors as KNXCarbonDioxideSensorConfig[],
-      temperatureSensors: config.temperatureSensors as KNXTemperatureSensorConfig[],
-      thermostats: config.thermostats as KNXThermostatConfig[],
+      switches: config.switches ? config.switches as KNXSwitchConfig[] : [],
+      windowCoverings: config.windowCoverings ? config.windowCoverings as KNXWindowCoveringConfig[] : [],
+      fans: config.fans ? config.fans as KNXFanConfig[] : [],
+      carbonDioxideSensors: config.carbonDioxideSensors ? config.carbonDioxideSensors as KNXCarbonDioxideSensorConfig[] : [],
+      airQualitySensors: config.airQualitySensors ? config.airQualitySensors as KNXAirQualitySensorConfig[] : [],
+      lightSensors: config.lightSensors ? config.lightSensors as KNXLightSensorConfig[] : [],
+      humiditySensors: config.humiditySensors ? config.humiditySensors as KNXHumiditySensorConfig[] : [],
+      temperatureSensors: config.temperatureSensors ? config.temperatureSensors as KNXTemperatureSensorConfig[] : [],
+      thermostats: config.thermostats ? config.thermostats as KNXThermostatConfig[] : [],
       debug: config.debugging as KNXDebuggingConfig,
     };
     this.connect(); 
@@ -111,7 +123,11 @@ export class KNXPlatform implements StaticPlatformPlugin {
   accessories(callback: (foundAccessories: AccessoryPlugin[]) => void): void {
     this.buildDevicesFromConfig(this.config.switches, KNXSwitch);
     this.buildDevicesFromConfig(this.config.windowCoverings, KNXWindowCovering);
+    this.buildDevicesFromConfig(this.config.fans, KNXFan);
+    this.buildDevicesFromConfig(this.config.airQualitySensors, KNXAirQualitySensor);
     this.buildDevicesFromConfig(this.config.carbonDioxideSensors, KNXCarbonDioxideSensor);
+    this.buildDevicesFromConfig(this.config.lightSensors, KNXLightSensor);
+    this.buildDevicesFromConfig(this.config.humiditySensors, KNXHumiditySensor);
     this.buildDevicesFromConfig(this.config.temperatureSensors, KNXTemperatureSensor);
     this.buildDevicesFromConfig(this.config.thermostats, KNXThermostat);
     callback(this.devices);
