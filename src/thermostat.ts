@@ -91,7 +91,9 @@ export class KNXThermostat extends KNXAccessoryPlugin {
   determineCurrentHeatingCoolingState() {
     if (this.hasConfiguredValve()) {
       if (this.valveLevel > 0) {
-        if (this.targetTemperature >= this.currentTemperature) {
+        // valve could be still open to keep current temperature on target level
+        // therefore it might get a bit over that level
+        if (this.targetTemperature >= (this.currentTemperature + 0.5)) {
           return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
         } else {
           return this.platform.Characteristic.CurrentHeatingCoolingState.COOL;

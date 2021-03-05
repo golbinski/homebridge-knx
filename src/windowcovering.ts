@@ -84,7 +84,10 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
   }
  
   refreshPositionState() {
-    if (this.targetPosition < this.currentPosition) {
+    const epsilon = Math.floor((this.config.maxValue - this.config.minValue) / 100);
+    if (Math.abs(this.targetPosition - this.currentPosition) <= epsilon) {
+      this.positionState = this.platform.Characteristic.PositionState.STOPPED;
+    } else if (this.targetPosition < this.currentPosition) {
       this.positionState = this.platform.Characteristic.PositionState.INCREASING;
     } else if (this.targetPosition > this.currentPosition) {
       this.positionState = this.platform.Characteristic.PositionState.DECREASING;
