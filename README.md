@@ -13,4 +13,10 @@ This is a homebridge plugin which connects the KNX devices with Apple HomeKit en
 Currently supported accessories:
 * Switch
 * WindowCovering
-* CarbonDioxideSensor 
+* CarbonDioxideSensor
+* HumiditySensor
+* LightSensor
+* AirQualitySensor (VOC Density)
+* TemperatureSensor
+* Thermostat 
+* Fan
