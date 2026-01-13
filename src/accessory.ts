@@ -18,8 +18,8 @@ export class KNXAccessoryPlugin extends EventEmitter implements AccessoryPlugin 
     this.uuid_base = address;
   }
 
-  subscribe(address) {
-    this.platform.subscribe(address, this);
+  subscribe(address, readOnInit = true) {
+    this.platform.subscribe(address, this, readOnInit);
   }
 
   write(value, callback, address?, dpt?) {

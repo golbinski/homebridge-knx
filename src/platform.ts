@@ -39,6 +39,7 @@ export interface KNXOptions {
 interface Subscriber {
   address: string,
   accessory: KNXAccessoryPlugin,
+  readOnInit: boolean,
 }
 
 interface PendingRequest {
@@ -140,10 +141,11 @@ export class KNXPlatform implements StaticPlatformPlugin {
     }
   }
 
-  subscribe(address: string, accessory: KNXAccessoryPlugin) {
+  subscribe(address: string, accessory: KNXAccessoryPlugin, readOnInit = true) {
     const subscriber = {
       address: address,
-      accessory: accessory
+      accessory: accessory,
+      readOnInit: readOnInit
     };
     this.subscribers.push(subscriber);
     if (this.busmonitor != null) {
@@ -161,9 +163,11 @@ export class KNXPlatform implements StaticPlatformPlugin {
         subscriber.accessory.emit('update', dest, value);
       }
     });
-    this.read(subscriber.address, (err, value) => {
-      subscriber.accessory.emit('update', subscriber.address, value);
-    });
+    if (subscriber.readOnInit) {
+      this.read(subscriber.address, (err, value) => {
+        subscriber.accessory.emit('update', subscriber.address, value);
+      });
+    }
   }
 
   private send(groupAddress: string, msg, callback) {
