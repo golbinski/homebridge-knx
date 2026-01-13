@@ -53,8 +53,8 @@ export class KNXWindowCovering extends KNXAccessoryPlugin {
         }
       }
     });
-    this.subscribe(this.config.targetGroupAddress);
-    this.subscribe(this.config.statusGroupAddress);
+    this.subscribe(this.config.targetGroupAddress, false); // Don't read on init to prevent movement after power loss
+    this.subscribe(this.config.statusGroupAddress); // Read actual position on init
   }
 
   positionStateToString(value) {
